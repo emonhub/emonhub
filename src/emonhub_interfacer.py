@@ -13,6 +13,8 @@ import datetime
 import logging
 import socket
 import select
+import urllib2
+import json
 
 import emonhub_coder as ehc
 
@@ -668,6 +670,102 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             # Process and return first frame in buffer:
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
             return self._process_frame(f)
+
+class EmonHubWundergroundInterfacer(EmonHubInterfacer):
+    """
+
+    """
+
+    def __init__(self, name):
+        """Initialize Interfacer
+
+
+
+        """
+
+        # Initialization
+        super(EmonHubWundergroundInterfacer, self).__init__(name)
+
+        # Initialize settings
+        self._defaults.update({'interval': 180})
+        self._settings.update(self._defaults)
+
+        # Wungerground specific settings
+        self._wug_settings =  ({'nodeid': '15', 'apikey': '', 'location': 'autoip', 'datafields': ''})
+        self._settings.update(self._wug_settings)
+
+    def set(self, **kwargs):
+        """
+
+        """
+
+        for key, setting in self._wug_settings.iteritems():
+            if key in kwargs.keys():
+                setting = kwargs[key]
+            else:
+                setting = self._wug_settings[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            self._settings[key] = setting
+            if not key in ('apikey', 'location'):
+                self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+
+        # include kwargs from parent
+        super(EmonHubWundergroundInterfacer, self).set(**kwargs)
+
+
+    def read(self):
+        """
+        Currently available datafields are
+        datafields = ("temp_c", "feelslike_c", "dewpoint_c", "heat_index_c", "windchill_c", "wind_mph",
+                      "wind_gust_mph", "visibility_mi", "precip_1hr_metric", "precip_today_metric",
+                      "UV", "wind_degrees", "pressure_mb", "pressure_in", "pressure_trend", "relative_humidity",
+                      "temp_f", "feelslike_f", "dewpoint_f", "heat_index_f", "windchill_f", "wind_kph",
+                      "wind_gust_kph", "visibility_km", "precip_1hr_in", "precip_today_in")
+        """
+
+        t = time.time()
+
+        # If an interval is set, check if that time has passed since last post
+        if int(self._settings['interval']) \
+                and t - self._interval_timestamp < int(self._settings['interval']):
+            return
+
+        # reset timer interval
+        self._interval_timestamp = t
+
+        # Fetch data from Wunderground
+        req = urllib2.urlopen('http://api.wunderground.com/api/' + self._settings['apikey'] + \
+                                 '/geolookup/conditions/q/' + self._settings['location'] + '.json')
+        json_string = req.read()
+        parsed_json = json.loads(json_string)
+
+        req.close()
+
+        # Start data frame string with node id
+        f =  self._settings['nodeid']
+
+        # Extract each value from the returned data
+        for datafield in self._settings['datafields']:
+            val = str(parsed_json['current_observation'][datafield])
+            # Remove "%" symbols
+            val = val.replace("%", "")
+            # Test for and append only numbers to the data frame string
+            try:
+                float(val)
+                f += " " + str(val)
+                continue
+            except Exception:
+                pass
+            # replace any non-numeric values with zero
+            f += " 0"
+
+        # Remove any extra spaces
+        f = " ".join(f.split())
+
+        # return the processed frame with a timestamp
+        return self._process_frame(f, t)
+
 
 """class EmonHubInterfacerInitError
 
