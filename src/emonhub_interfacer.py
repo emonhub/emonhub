@@ -15,8 +15,10 @@ import socket
 import select
 import urllib2
 import json
+import Queue
 
 import emonhub_coder as ehc
+import emonhub_helper as ehh
 
 """class EmonHubInterfacer
 
@@ -679,8 +681,6 @@ class EmonHubWundergroundInterfacer(EmonHubInterfacer):
     def __init__(self, name):
         """Initialize Interfacer
 
-
-
         """
 
         # Initialization
@@ -694,10 +694,18 @@ class EmonHubWundergroundInterfacer(EmonHubInterfacer):
         self._wug_settings =  ({'nodeid': '15', 'apikey': '', 'location': 'autoip', 'datafields': ''})
         self._settings.update(self._wug_settings)
 
+        # Create a queue for this interfacer
+        self._queue = Queue.Queue(0)
+
+        # Create helper thread
+        self.helper = ehh.EmonHubHelper(self.name, self._queue)
+
+
     def set(self, **kwargs):
         """
 
         """
+        update_url = False
 
         for key, setting in self._wug_settings.iteritems():
             if key in kwargs.keys():
@@ -707,16 +715,31 @@ class EmonHubWundergroundInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             self._settings[key] = setting
+            update_url = True
             if not key in ('apikey', 'location'):
                 self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+
+        # Update url string if necessary
+        if update_url:
+            self._settings['urlstring'] = 'http://api.wunderground.com/api/' + self._settings['apikey'] + \
+                                 '/geolookup/conditions/q/' + self._settings['location'] + '.json'
+            #self._settings['url_string'] = 'http://google.com'
 
         # include kwargs from parent
         super(EmonHubWundergroundInterfacer, self).set(**kwargs)
 
+        # update helper settings
+        for key, setting in self.helper._settings.iteritems():
+            if setting != self._settings[key]:
+                self.helper._settings[key] = self._settings[key]
+
 
     def read(self):
         """
-        Currently available datafields are
+        # Fetch data from Wunderground
+        request = urllib2.urlopen('http://api.wunderground.com/api/' + self._settings['apikey'] + \
+                                 '/geolookup/conditions/q/' + self._settings['location'] + '.json')
+        Currently available datafields include
         datafields = ("temp_c", "feelslike_c", "dewpoint_c", "heat_index_c", "windchill_c", "wind_mph",
                       "wind_gust_mph", "visibility_mi", "precip_1hr_metric", "precip_today_metric",
                       "UV", "wind_degrees", "pressure_mb", "pressure_in", "pressure_trend", "relative_humidity",
@@ -724,23 +747,18 @@ class EmonHubWundergroundInterfacer(EmonHubInterfacer):
                       "wind_gust_kph", "visibility_km", "precip_1hr_in", "precip_today_in")
         """
 
-        t = time.time()
 
-        # If an interval is set, check if that time has passed since last post
-        if int(self._settings['interval']) \
-                and t - self._interval_timestamp < int(self._settings['interval']):
+        if self._queue.empty():
             return
 
-        # reset timer interval
-        self._interval_timestamp = t
-
-        # Fetch data from Wunderground
-        req = urllib2.urlopen('http://api.wunderground.com/api/' + self._settings['apikey'] + \
-                                 '/geolookup/conditions/q/' + self._settings['location'] + '.json')
-        json_string = req.read()
-        parsed_json = json.loads(json_string)
-
-        req.close()
+        retrieved_data = {}
+        # If there data in the in the queue
+        try:
+            parsed_json = json.loads(self._queue.get())
+        except ValueError as e:
+            self._log.warning(self.name + " couldn't process data, ValueError: " +
+                              str(e.message))
+            return
 
         # Start data frame string with node id
         f =  self._settings['nodeid']
@@ -763,8 +781,16 @@ class EmonHubWundergroundInterfacer(EmonHubInterfacer):
         # Remove any extra spaces
         f = " ".join(f.split())
 
-        # return the processed frame with a timestamp
-        return self._process_frame(f, t)
+        # return the processed frame with a timestamp if possible
+        try:
+            t = int(parsed_json['current_observation']['observation_epoch'])
+            return self._process_frame(f, t)
+        except:
+            return self._process_frame(f)
+
+    def close(self):
+        """Stop thread"""
+        self.helper.stop = True
 
 
 """class EmonHubInterfacerInitError
