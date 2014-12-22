@@ -35,7 +35,7 @@ Communicates with the user through an EmonHubSetup
 
 class EmonHub(object):
     
-    __version__ = 'Pre-Release Development Version (rc1.2)'
+    __version__ = 'Pre-Release Development Version (rc1.2+)'
     
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
