@@ -374,6 +374,11 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
 
         # Reset buffer
         self._rx_buf = ''
+        
+        # Discard empty frames
+        if not f:
+            self._log.warning("Discarded empty frame")
+            return
 
         # unix timestamp
         t = round(time.time(), 2)
@@ -401,7 +406,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         if com_baud != 0:
             super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
         else:
-            for com_baud in (57600, 9600):
+            for com_baud in (57600, 38400, 9600):
                 super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
                 self._ser.write("?")
                 time.sleep(2)
@@ -473,13 +478,18 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
         # Reset buffer
         self._rx_buf = ''
+        
+        # Discard empty frames
+        if not f:
+            self._log.warning("Discarded empty frame")
+            return
 
         # Discard information messages
         if (f[0] == '>'):
             self._log.debug(self.name + " acknowledged command: " + str(f))
             return
 
-        if (f[0:3] == ' ->'):
+        if (len(f)>2 and f[0:3] == ' ->'):
             self._log.debug(self.name + " confirmed sent packet size: " + str(f))
             return
 
