@@ -10,7 +10,7 @@ This branch is where the development version of emonHub is maintained
 
 This development version can be installed in one line using [dev-emonhub](https://github.com/emonhub/dev-emonhub/blob/master/README.md)
 
-    it clone https://github.com/emonhub/dev-emonhub.git ~/dev-emonhub && ~/dev-emonhub/install
+    git clone https://github.com/emonhub/dev-emonhub.git ~/dev-emonhub && ~/dev-emonhub/install
 
 This software is part of OpenEnergyMonitor project.
 
