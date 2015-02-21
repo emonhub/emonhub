@@ -153,11 +153,11 @@ class EmonHubInterfacer(threading.Thread):
             self._log.warning(str(cargo.uri) + " Discarded RX frame 'non-numerical content' : " + str(rxc.realdata))
             return False
             
-        # Discard if first value is not a valid node id
-        n = float(received[0])
-        if n % 1 != 0 or n < 0 or n > 31:
-            self._log.warning(str(ref) + " Discarded RX frame 'node id outside scope' : " + str(received))
-            return False
+        # # Discard if first value is not a valid node id
+        # n = float(received[0])
+        # if n % 1 != 0 or n < 0 or n > 31:
+        #     self._log.warning(str(ref) + " Discarded RX frame 'node id outside scope' : " + str(received))
+        #     return False
 
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
@@ -555,7 +555,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         if com_baud != 0:
             super(EmonHubJeeInterfacer, self).__init__(name, rxq, txq, com_port, com_baud)
         else:
-            for com_baud in (57600, 9600):
+            for com_baud in (57600, 38400, 9600):
                 super(EmonHubJeeInterfacer, self).__init__(name, rxq, txq, com_port, com_baud)
                 self._ser.write("?")
                 time.sleep(2)
