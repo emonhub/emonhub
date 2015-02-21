@@ -2,3 +2,5 @@ README.md
 *.pyc
 *.swp
 *.idea
+src/emonhub_interfacers/*.py
+!src/emonhub_interfacers/EmonHub*.py
