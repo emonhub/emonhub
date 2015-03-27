@@ -141,9 +141,12 @@ class EmonHubInterfacer(object):
             self._log.warning(str(ref) + " Discarded RX frame 'string too short' : " + str(received))
             return False
 
-        # Discard if anything non-numerical found
+        # Discard if anything non-numerical found (except "None")
         try:
-            [float(val) for val in received]
+            #[float(val) for val in received]
+            for val in received:
+                if val:
+                    float(val)
         except Exception:
             self._log.warning(str(ref) + " Discarded RX frame 'non-numerical content' : " + str(received))
             return False
@@ -201,10 +204,12 @@ class EmonHubInterfacer(object):
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
-                    if float(val) % 1 != 0:
-                        val = float(val)
-                    else:
-                        val = int(float(val))
+                    # check if not None
+                    if val:
+                        if float(val) % 1 != 0:
+                            val = float(val)
+                        else:
+                            val = int(float(val))
                     decoded.append(val)
             # Discard frame if total size is not an exact multiple of the specified datacode size.
             elif len(data) % ehc.check_datacode(datacode) != 0:
