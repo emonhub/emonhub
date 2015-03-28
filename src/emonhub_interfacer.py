@@ -411,7 +411,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         if com_baud != 0:
             super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
         else:
-            for com_baud in (38400, 9600):
+            for com_baud in (9600, 38400, 57600):
                 super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
                 self._ser.write("?")
                 time.sleep(2)
