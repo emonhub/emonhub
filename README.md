@@ -4,13 +4,13 @@ emonHub
 test-wunderground branch
 ------------------
 
-## UNTESTED MERGE OF SOME OUTDATED CODE FOR ASSESMENT ONLY - NOT FOR USE !!!!!
+#####UNTESTED MERGE OF SOME OUTDATED CODE FOR ASSESMENT ONLY - NOT FOR USE !!!!!
 
 The 2 conciderations at that time (as I recall) were having to use a "helper thread" so as not to reintroduce the blocking effect caused by a non-responding http request, overcome in the emoncms reporter using threading. And the uncertainty of whether the "weather node" data array should be defined in emonhub.conf nodes section rather than the runtimesettings or not.
 
 Any in-depth development of this will be intended for the next gen of emonhub which uses threading for the interfacers, although it may not take much to "just get it working" with the current version
 
-###the accompanying explanation at that time was
+#####the accompanying explanation at that time was
 
 This is the initial draft of a weather api, needs some work still but it does work. requires testing for a while to check data consistency from provider see this forum thread [Weather data in emoncms](http://openenergymonitor.org/emon/node/5633)
 
