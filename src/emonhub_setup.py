@@ -114,7 +114,7 @@ class EmonHubFileSetup(EmonHubSetup):
         
         # Check settings only once per second
         now = time.time()
-        if now - self._settings_update_timestamp < 0:
+        if now - self._settings_update_timestamp < 1:
             return
         # Update timestamp
         self._settings_update_timestamp = now
