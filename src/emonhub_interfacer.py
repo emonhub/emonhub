@@ -36,7 +36,7 @@ class EmonHubInterfacer(object):
         # Initialise settings
         self.name = name
         self.init_settings = {}
-        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False'}
+        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False', 'nodeoffset': 0}
         self._settings = {}
         self._packet_counter = 0
 
@@ -173,6 +173,11 @@ class EmonHubInterfacer(object):
         data = data[1:]
         decoded = []
 
+        # offset the node id if set
+        if 'nodeoffset' in self._settings \
+                and self._settings['nodeoffset']:
+            node += self._settings['nodeoffset']
+
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
             # fetch the string of datacodes
@@ -270,6 +275,8 @@ class EmonHubInterfacer(object):
             elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l', 'f']:
                 pass
             elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
+                pass
+            elif key == 'nodeoffset' and str(setting).isdigit():
                 pass
             else:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
