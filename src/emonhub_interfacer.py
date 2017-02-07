@@ -176,7 +176,7 @@ class EmonHubInterfacer(object):
         # offset the node id if set
         if 'nodeoffset' in self._settings \
                 and self._settings['nodeoffset']:
-            node += self._settings['nodeoffset']
+            node = str(int(node) + int(self._settings['nodeoffset']))
 
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
