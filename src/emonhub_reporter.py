@@ -329,7 +329,7 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         # &time=0
 
         # Construct post_url (without apikey)
-        post_url = self._settings['url']+'/input/bulk'+'.json?&time=0&apikey='
+        post_url = self._settings['url']+'/input/bulk'+'.json?time=0&apikey='
         post_body = "data="+data_string
 
         # logged before apikey added for security
