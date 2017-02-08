@@ -326,14 +326,11 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         # Prepare URL string of the form
         # http://domain.tld/emoncms/input/bulk.json?apikey=12345
         # &data=[[0,10,82,23],[5,10,82,23],[10,10,82,23]]
-        # &sentat=15' (requires emoncms >= 8.0)
-
-        # time that the request was sent at
-        sentat = int(time.time())
+        # &time=0
 
         # Construct post_url (without apikey)
-        post_url = self._settings['url']+'/input/bulk'+'.json?apikey='
-        post_body = "data="+data_string+"&sentat="+str(sentat)
+        post_url = self._settings['url']+'/input/bulk'+'.json?&time=0&apikey='
+        post_body = "data="+data_string
 
         # logged before apikey added for security
         self._log.info(self.name + " sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
