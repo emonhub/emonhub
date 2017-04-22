@@ -36,7 +36,7 @@ class EmonHubInterfacer(object):
         # Initialise settings
         self.name = name
         self.init_settings = {}
-        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False'}
+        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False', 'scale': 1}
         self._settings = {}
         self._packet_counter = 0
 
@@ -233,6 +233,45 @@ class EmonHubInterfacer(object):
                 bytepos += size
                 decoded.append(value)
 
+        #SCALES
+        if node in ehc.nodelist and 'scales' in ehc.nodelist[node]:
+            # If node is listed and has individual scales for each value
+            scales = ehc.nodelist[node]['scales']
+            # Determine the expected number of values to be decoded
+            if len(decoded) != len(scales):
+                # Discard the frame & return 'False' if it doesn't match the number of scales
+                self._log.warning(
+                    str(ref) + " Scales " + str(scales) + " for RX data : " + str(decoded) +
+                    " not suitable ")
+                return False
+            else:
+                # Set decoder to "Per value" scaling using scale 'False' as flag
+                scale = False
+        else:
+            if node in ehc.nodelist and 'scale' in ehc.nodelist[node]:
+                # if node is listed, but has only a single scale for all values set that scale
+                scale = ehc.nodelist[node]['scale']
+            else:
+                # when node not listed or has no scale(s) use the interfacers default if specified
+                scale = self._settings['scale']
+
+        if not scale == "1":
+            # If "scale" is anything but "1" we need to apply scale(s)
+            for i in range(0, len(decoded), 1):
+                x = scale
+                if not scale:
+                    # If scale is false then use array of scales
+                    x = scales[i]
+                # if scale is 1 nothing needs to happen, otherwise do the scaling
+                if x != "1":
+                    val = decoded[i] * float(x)
+                    if val % 1 == 0:
+                        # tidy up integers (loose the .0} and add to result array
+                        decoded[i] = int(val)
+                    else:
+                        # or just add the float to the result array
+                        decoded[i] = val
+
         # Insert node ID before data
         decoded.insert(0, int(node))
         return decoded
@@ -265,6 +304,8 @@ class EmonHubInterfacer(object):
             elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l', 'f']:
                 pass
             elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
+                pass
+            elif key == 'scale' and setting and str(setting).isdigit:
                 pass
             else:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
