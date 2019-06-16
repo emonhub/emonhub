@@ -1,0 +1,32 @@
+## For use with log2ram only
+
+/var/log/emonhub/emonhub.log {
+# Dummy definition to ensure emonhub.log is NOT rotated
+# only rotate if over 10M (not possible with inbuilt 5M rotation) 
+size 6M
+}
+
+/var/log/emonhub/emonhub.log.1 {
+    # rotate at least daily
+    daily
+    # keep up to 4 weeks worth
+    rotate 28
+    
+    size 3M
+    compress
+    delaycompress
+    # do not create another emonhub.log.1 file that's emonhub's job!
+    nocreate
+    missingok
+    notifempty
+
+    # rotate emonhub log files to an emonhub folder in log.old
+    olddir /var/log.old/emonhub
+    createolddir 775 root emonhub
+    renamecopy
+    
+    sharedscripts
+    postrotate
+        # possibly some concatenation into daily files
+    endscript
+}
